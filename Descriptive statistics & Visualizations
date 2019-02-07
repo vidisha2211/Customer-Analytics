@@ -1,0 +1,365 @@
+# Visualizing the Satisfaction column
+
+hist(as.numeric(dataCleaned$Satisfaction))
+
+# Checking the effect of avg shop amt spend on different age groups
+AgeVsShop <-sqldf("Select Age,count(age),avg(Shopping_Amount_at_Airport) AS Shopping_Amount_at_Airport FROM dataCleaned GROUP BY Age;")
+#str(AgeVsShop)
+
+# Checking the effect of avg shop amt spend on different age groups
+
+AvgVsE_D <-sqldf("Select Age,count(age), avg(Eating_and_Drinking_at_Airport) AS Eating_and_Drinking_at_Airport FROM dataCleaned GROUP BY Age;")
+#str(AvgVsE_D)
+
+# Performing descriptive statistics
+
+install.packages("ggplot2")
+library(ggplot2)
+
+# Plotting line graph of Age VS Shopping Amount
+
+ggplot(AgeVsShop, aes(x = AgeVsShop$Age, y = AgeVsShop$Shopping_Amount_at_Airport)) + 
+  geom_line(stat = "identity", color = "Black") + 
+  ggtitle("Age vs Shopping Amount Spent") + 
+  scale_x_continuous(name="Age") + 
+  scale_y_continuous(name = "Average Amount spent")
+
+# Plotting line graph of Age VS Eating and Drinking Amount
+
+ggplot(AvgVsE_D, aes(x = AvgVsE_D$Age , y = AvgVsE_D$Eating_and_Drinking_at_Airport )) + 
+  geom_line(stat = "identity", color = "Blue") + 
+  ggtitle("Age vs Eating & Drinking amount") + 
+  scale_x_continuous(name="Age") + 
+  scale_y_continuous(name = "Average Amount spent")
+
+# Plot of Airline Status Vs Satisfaction
+statusVsSatisfaction <- table(dataCleaned$Satisfaction, dataCleaned$Airline_Status)
+statusVsSatisfaction_df <- data.frame(statusVsSatisfaction)
+colnames(statusVsSatisfaction_df) <- c("Satisfaction", "Status", "Frequency")
+statusVsSatisfaction_plot <- ggplot(statusVsSatisfaction_df, aes(y = jitter(statusVsSatisfaction_df$Frequency,20), x = statusVsSatisfaction_df$Status))
+statusVsSatisfaction_plot <- statusVsSatisfaction_plot + geom_point(aes(color = statusVsSatisfaction_df$Satisfaction, size = 1)) + guides(color = guide_legend(title = "Satisfaction Rate"))
+statusVsSatisfaction_plot <- statusVsSatisfaction_plot + scale_x_discrete("Airline Status") + scale_y_continuous("Frequency of each Status") + ggtitle("Plot of Airline Status Vs Satisfaction")
+statusVsSatisfaction_plot
+
+# Plot of Price Sensitivity Vs Satisfaction
+satisfactionVsSensitivity <- table(dataCleaned$Satisfaction, dataCleaned$Price_Sensitivity)
+satisfactionVsSensitivity_df <- data.frame(satisfactionVsSensitivity)
+colnames(satisfactionVsSensitivity_df) <- c("Satisfaction", "Sensitivity", "Frequency")
+satisfactionVsSensitivity_plot <- ggplot(satisfactionVsSensitivity_df, aes(x = Sensitivity, y = Frequency, group = Satisfaction))
+satisfactionVsSensitivity_plot <- satisfactionVsSensitivity_plot + geom_line(aes(color = satisfactionVsSensitivity_df$Satisfaction)) + guides(color = guide_legend(title = "Satisfaction Rate"))
+satisfactionVsSensitivity_plot <- satisfactionVsSensitivity_plot + scale_x_discrete("Price Sensitivity (Values: 0 - 4)") + scale_y_continuous("Frequency") + ggtitle("Plot of Satisfaction Vs Price Sensitivity")
+satisfactionVsSensitivity_plot
+
+# Plot of Price Sensitivity Vs Airline status
+statusVsSensitivity <- table(dataCleaned$Airline_Status, dataCleaned$Price_Sensitivity)
+statusVsSensitivity_df <- data.frame(statusVsSensitivity)
+colnames(statusVsSensitivity_df) <- c("Status", "Sensitivity", "Frequency")
+statusVsSensitivity_plot <- ggplot(statusVsSensitivity_df, aes(x = Sensitivity, y = Frequency, group = Status))
+statusVsSensitivity_plot <- statusVsSensitivity_plot + geom_line(aes(color = statusVsSensitivity_df$Status)) + guides(color = guide_legend(title = "Status"))
+statusVsSensitivity_plot <- statusVsSensitivity_plot + scale_x_discrete("Price Sensitivity (Values: 0 - 4)") + scale_y_continuous("Frequency") + ggtitle("Plot of Airline status Vs Price Sensitivity")
+statusVsSensitivity_plot
+
+# Plot of Number of flights per annum Vs Satisfaction
+noofflightsVsSatisfaction <- table(dataCleaned$Satisfaction, dataCleaned$No_of_Flights_p_a_)
+noofflightsVsSatisfaction_df <- data.frame(noofflightsVsSatisfaction)
+colnames(noofflightsVsSatisfaction_df) <- c("Satisfaction", "NumberOfFlights", "Frequency")
+noofflightsVsSatisfaction_df$Satisfaction <- as.factor(noofflightsVsSatisfaction_df$Satisfaction)
+noofflightsVsSatisfaction_df$NumberOfFlights <- as.numeric(noofflightsVsSatisfaction_df$NumberOfFlights)
+noofflightsVsSatisfaction_df <- noofflightsVsSatisfaction_df[noofflightsVsSatisfaction_df$Frequency > 0,]
+head(noofflightsVsSatisfaction_df)
+str(noofflightsVsSatisfaction_df)
+
+noofflightsVsSatisfaction_plot <- ggplot(noofflightsVsSatisfaction_df, aes(x = NumberOfFlights, y = jitter(Frequency, 30)))
+noofflightsVsSatisfaction_plot <- noofflightsVsSatisfaction_plot + geom_point(aes(color = noofflightsVsSatisfaction_df$Satisfaction, size = 0)) + guides(color = guide_legend(title = "Satisfaction Rate")) + scale_color_brewer(palette = "Spectral")
+noofflightsVsSatisfaction_plot <- noofflightsVsSatisfaction_plot + scale_x_continuous("Number of flights") + scale_y_continuous("Frequency") + ggtitle("Plot of Satisfaction Vs Number of flights per annum")
+noofflightsVsSatisfaction_plot
+
+# Plot of Type of travel Vs Satisfaction
+traveltypeVsSatisfaction <- table(dataCleaned$Satisfaction, dataCleaned$Type_of_Travel)
+traveltypeVsSatisfaction_df <- data.frame(traveltypeVsSatisfaction)
+noofflightsVsSatisfaction_df$Satisfaction <- as.numeric(noofflightsVsSatisfaction_df$Satisfaction)
+colnames(traveltypeVsSatisfaction_df) <- c("Satisfaction", "Type", "Frequency")
+traveltypeVsSatisfaction_plot <- ggplot(traveltypeVsSatisfaction_df, aes(x = traveltypeVsSatisfaction_df$Type, y = jitter(Frequency, 30)))
+traveltypeVsSatisfaction_plot <- traveltypeVsSatisfaction_plot + geom_bar(stat = "identity", aes(fill = traveltypeVsSatisfaction_df$Satisfaction)) + scale_fill_brewer(palette = "Blues") + guides(fill = guide_legend(title = "Satisfaction Rate"))
+traveltypeVsSatisfaction_plot <- traveltypeVsSatisfaction_plot + scale_x_discrete("Type of travel") + scale_y_continuous("Frequency") + ggtitle("Plot of Satisfaction Vs type of travel")
+traveltypeVsSatisfaction_plot
+
+# Number of people in different classes
+class_df <- data.frame(table(dataCleaned$Class))
+colnames(class_df) <- c("Class", "Frequency")
+class_plot <- ggplot(class_df, aes(x = class_df$Class, y = class_df$Frequency)) + geom_histogram(stat = "identity", aes(fill = "red")) + ggtitle("People in different classes") + scale_x_discrete("Class") + scale_y_continuous("Frequency")
+class_plot
+
+# Departure delay affecting customer satisfaction
+depdelay_df <- data.frame(table(dataCleaned$Satisfaction, dataCleaned$Departure_Delay_in_Minutes))
+colnames(depdelay_df) <- c("Satisfaction", "DepartureDelay", "Frequency")
+depdelay_df$Satisfaction <- as.numeric(depdelay_df$Satisfaction)
+depdelay_df$DepartureDelay <- as.numeric(depdelay_df$DepartureDelay)
+depdelay_func <- function(vec){
+  q <- quantile(vec, c(0.4, 0.6))
+  vBuckets <- replicate(length(vec), "Average")
+  vBuckets[vec >= q[2]] <- "High"
+  vBuckets[vec < q[1]] <- "Low"
+  return(vBuckets)
+}
+str(depdelay_df)
+depdelay_df$Range <- depdelay_func(depdelay_df$DepartureDelay)
+depdelay_plot <- ggplot(depdelay_df, aes(x = Range, y = Frequency)) + geom_bar(stat = "identity", aes(fill = depdelay_df$Satisfaction)) + scale_fill_brewer(palette = "OrRd")
+depdelay_plot
+
+# Plotting age and type of travel
+
+dataPlot<-dataCleaned
+
+head(ageTravel_df)
+ggplot(data=)
+
+q<-quantile(dataPlot$Age, c(0.25, 0.5, 0.75))
+
+vec<-dataPlot$Age
+
+vBuckets <- replicate(length(vec), "Average")
+vBuckets[vec <= q[1]] <- "15 to 33"
+vBuckets[vec > q[1] & vec<=q[2]] <- "33 to 45"
+vBuckets[vec> q[2] & vec<=q[3]] <- "46 to 59"
+vBuckets[vec>q[3]] <- "60 to 85"
+
+dataPlot$Age<-as.factor(vBuckets)
+
+str(dataPlot$Age)
+
+ageTravel<-table(dataPlot$Age,dataPlot$Type_of_Travel)
+ageTravel_df<-data.frame(ageTravel)
+colnames(ageTravel_df)<-c("Age","Type_of_Travel","Frequency")
+View(ageTravel_df)
+
+ggplot(ageTravel_df,aes(x=Age,y=Frequency))+
+  geom_bar(stat = "identity",aes(fill = ageTravel_df$Type_of_Travel))+
+  scale_fill_brewer(palette = "Spectral") +
+  guides(fill = guide_legend(title = "Type of Travel"))
+
+# Plotting age vs Price Sensitivity
+
+agePrice<-table(dataPlot$Age,dataPlot$Price_Sensitivity)
+agePrice_df<-data.frame(agePrice)
+colnames(agePrice_df)<-c("Age","Price_Sensitivity","Frequency")
+
+ggplot(agePrice_df,aes(x=Age,y=Frequency))+
+  geom_bar(stat = "identity",aes(fill = agePrice_df$Price_Sensitivity))+
+  scale_fill_brewer(palette = "Spectral")
+
+# Plotting age vs class
+
+ageClass<-table(dataPlot$Age,dataPlot$Class)
+ageClass_df<-data.frame(ageClass)
+colnames(ageClass_df)<-c("Age","Class","Frequency")
+
+ggplot(ageClass_df,aes(x=Age,y=Frequency))+
+  geom_bar(stat = "identity",aes(fill = ageClass_df$Class))+
+  scale_fill_brewer(palette = "Spectral") +
+  guides(fill=guide_legend(title="Class"))
+
+
+# Plotting age vs Shopping amount
+
+AgeShop<-table(dataPlot$Age,dataPlot$Shopping_Amount_at_Airport)
+AgeShop_df<-data.frame(AgeShop)
+colnames(AgeShop_df)<-c("Age","Shop_Amount","Frequency")
+
+ggplot(AgeShop_df,aes(x=Age,y=Frequency))+
+  geom_point(aes(color = AgeShop_df$Age))+
+  scale_color_brewer(palette = "Spectral") +
+  guides(color=guide_legend(title="Age"))
+
+summary(AgeShop_df$Shop_Amount)
+AgeShop_df$Shop_Amount<-as.numeric(AgeShop_df$Shop_Amount)
+AgeShop_dfT<-AgeShop_df[AgeShop_df$Shop_Amount>0,]
+summary(AgeShop_dfT$Shop_Amount)
+
+summary(AgeShop_df$Shop_Amount)
+
+# Frequency of flight - network plot
+
+#finding unique pairs of Origin State and Destination State
+uniqueStatePairs <- unique(dataCleaned[,c('Origin_State','Destination_State')])
+head(uniqueStatePairs,2)
+
+library(sqldf)
+
+#ordering origin state's count of outbounding flights 
+orderedState<-sqldf("Select Distinct Count(Origin_State), Origin_State FROM uniqueStatePairs 
+                    GROUP BY Origin_State ORDER BY Count(Origin_State) DESC")
+head(orderedState,3)
+
+# We got that the states of Illinois(36), Maryland(32) and Nevada(32) has most outbounds
+
+#functions to add geocodes for destination states
+
+# Latitude
+addLat<- function(x){
+  latitude <- geocode(source = 'dsk', x)
+  return(latitude$lat)
+}
+# Longitude
+addLon<- function(x){
+  longitude <- geocode(source = 'dsk', x)
+  return(longitude$lon)
+}
+
+library(ggmap)
+
+# Starting with Illinois
+
+#Geocode for Illinois
+LatW <-addLat("Illinois")
+LonW <-addLon("Illinois")
+
+# adding the lat and long of all the states to the above df
+
+ConWithIllinois<-sqldf("select AVG(Satisfaction) AS Sat, Destination_State FROM dataCleaned WHERE Origin_State='Illinois' GROUP BY Destination_State")
+ConWithIllinois
+
+ConWithIllinois$lat<-addLat(ConWithIllinois$Destination_State)
+ConWithIllinois$lon<-addLon(ConWithIllinois$Destination_State)
+
+# Creating a dummy states df to simulate simple US map
+
+USAState<-data.frame(state.name,state.region,state.center)
+USAState$stateName<-tolower(USAState$state.name)
+
+ConWithIllinois$stateName<-tolower(ConWithIllinois$Destination_State)
+
+us<-map_data("state")
+
+# Creating a simple map
+
+map_simple<-ggplot(USAState,aes(map_id=stateName))+
+  geom_map(map=us,fill="light blue",color="black")+
+  expand_limits(x=us$long,y=us$lat)+
+  ggtitle("Map of USA")
+map_simple
+
+# Adding outbounds on the map
+
+outboundMap<-map_simple+
+  geom_curve(aes(x=LonW,y=LatW,xend=ConWithIllinois$lon ,yend=ConWithIllinois$lat, color=Sat), data=ConWithIllinois)
+outboundMap
+
+# Can be repeated same for other two states
+
+# Creating a color coded (heat map) of origin states
+
+library(sqldf)
+
+stateSat<-sqldf("Select avg(Satisfaction) as sat,Origin_State FROM dataCleaned GROUP BY Origin_State")
+stateSat
+
+stateSatDes<-sqldf("Select avg(Satisfaction) as sat,Destination_State FROM dataCleaned GROUP BY Destination_State")
+stateSatDes
+
+stateSat$stateName<-tolower(stateSat$Origin_State)
+#stateSat<-stateSat[,-2]
+
+stateSatDes$stateName<-tolower(stateSatDes$Destination_State)
+
+USAStateA<-data.frame(state.name,state.center,state.area)
+USAStateA$stateName<-tolower(USAStateA$state.name)
+#USAStateA[,-1]
+
+library(ggplot2)
+
+merged_df<-merge(USAStateA,stateSat,all.x=TRUE)
+merged_df
+
+merged_dfDes<-merge(USAStateA,stateSatDes,all.x=TRUE)
+merged_dfDes
+
+ggplot(merged_df , aes(map_id=stateName)) +
+  geom_map(map=us,aes(fill=sat), color="black") +
+  expand_limits(x=us$long,y=us$lat) +
+  coord_map() +
+  ggtitle("Origin states' Satisfaction ")+
+  geom_text(aes(x=merged_df$x,y=merged_df$y,label=merged_df$stateName))
+
+ggplot(merged_dfDes , aes(map_id=stateName )) +
+  geom_map(map=us,aes(fill=sat), color="black") +
+  expand_limits(x=us$long,y=us$lat) +
+  coord_map() +
+  ggtitle("Origin state' based on Departure delay")+
+  geom_text(aes(x=merged_df$x,y=merged_df$y,label=merged_df$stateName))
+
+# Plotting Gender vs Type of Travel
+
+GenderTypeOfTravel <-table(dataPlot$Gender, dataPlot$Type_of_Travel)
+GenderTypeOfTravel_df<-data.frame(GenderTypeOfTravel)
+colnames(GenderTypeOfTravel_df)<-c("Gender","Type_of_Travel","Frequency")
+
+ggplot(GenderTypeOfTravel_df,aes(x= Gender,y=Frequency))+
+  geom_bar(stat = "identity",aes(fill = GenderTypeOfTravel_df$Type_of_Travel))+
+  scale_fill_brewer(palette = "Spectral") +
+  guides(fill=guide_legend(title="Type of Travel"))+
+  ggtitle("Gender vs Type of Travel")
+
+# Plotting Gender vs Class
+
+GenderClass<-table(dataPlot$Gender,dataPlot$Class)
+GenderClass_df<-data.frame(GenderClass)
+colnames(GenderClass_df)<-c("Gender","Class","Frequency")
+
+ggplot(GenderClass_df ,aes(x= Gender,y=Frequency))+
+  geom_bar(stat = "identity",aes(fill = GenderClass_df$Class ))+
+  scale_fill_brewer(palette = "Spectral") +
+  guides(fill=guide_legend(title="Class"))+
+  ggtitle("Gender vs Class")
+
+# Plotting Gender vs Eating & Drinking amount
+
+dataPlot$Eating_and_Drinking_at_Airport<-map(as.numeric(dataPlot$Eating_and_Drinking_at_Airport))
+GenderEatDrink<-table(dataPlot$Gender,dataPlot$Eating_and_Drinking_at_Airport)
+GenderEatDrink_df<-data.frame(GenderEatDrink)
+colnames(GenderEatDrink_df)<-c("Gender","Eating_and_Drinking","Frequency")
+
+ggplot(GenderEatDrink_df ,aes(x= Gender,y=Frequency))+
+  geom_bar(stat = "identity",aes(fill = GenderEatDrink_df$Eating_and_Drinking ))+
+  scale_fill_brewer(palette = "Spectral") +
+  guides(fill=guide_legend(title="Eating and Drinking"))+
+  ggtitle("Gender vs Eating&Drinking")
+
+dataCleanedLow<-dataCleaned[dataCleaned$Satisfaction<3,]
+
+summary(dataCleaned$X__of_Flight_with_other_Airlines)
+
+summary(dataCleanedLow$X__of_Flight_with_other_Airlines)
+
+# Plotting Arrival Delay in Minutes vs Destination State
+summary(dataCleaned$Arrival_Delay_in_Minutes)
+dataPlot<-dataCleaned
+dataPlot<-dataPlot[!(dataPlot$Arrival_Delay_in_Minutes=="9999"),]
+summary(dataPlot$Arrival_Delay_in_Minutes)
+
+stateArrival<-sqldf("Select sum(Arrival_Delay_in_Minutes) AS sum,Destination_State FROM dataPlot GROUP BY Destination_State" )
+stateArrival$stateName<-tolower(stateArrival$Destination_State)
+merged_dfA<-merge(USAStateA,stateArrival,all.x=TRUE)
+
+ggplot(merged_dfA , aes(map_id=stateName)) +
+  geom_map(map=us,aes(fill=sum ), color="black") +
+  expand_limits(x=us$long,y=us$lat) +
+  coord_map() +
+  ggtitle("Destination states' based on Arrival delay")+
+  geom_text(aes(x=merged_dfA$x,y=merged_dfA$y,label=merged_dfA$stateName))
+
+# Plotting  Origin State and Departure Delay in Minutes
+dataPlot<-dataCleaned
+summary(dataPlot$Departure_Delay_in_Minutes)
+dataPlot<-dataPlot[!(dataPlot$Departure_Delay_in_Minutes =="9999"),]
+summary(dataPlot$Departure_Delay_in_Minutes)
+stateDep<-sqldf("Select sum(Departure_Delay_in_Minutes) AS sum,Origin_State FROM dataPlot GROUP BY Origin_State" )
+stateDep$stateName<-tolower(stateDep$Origin_State)
+merged_dfD<-merge(USAStateA,stateDep,all.x=TRUE)
+
+ggplot(merged_dfD , aes(map_id=stateName)) +
+  geom_map(map=us,aes(fill=sum ), color="black") +
+  expand_limits(x=us$long,y=us$lat) +
+  coord_map() +
+  ggtitle("Color coded, Origin state based on Departure delay")+
+  geom_text(aes(x=merged_dfD$x,y=merged_dfD$y,label=merged_dfD$stateName))
