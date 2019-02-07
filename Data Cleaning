@@ -1,0 +1,104 @@
+options(scipen = 100)
+
+#setwd("D:/Vidisha_Assignments/IST 687 - Introduction to Data Science")
+#setwd("C:/Users/SHASHIKANT/Desktop/R")
+
+data<-read.csv("Satisfaction Survey.csv", stringsAsFactors = FALSE)
+
+str(data)
+
+# Selecting the records with low satisfied cusomers
+
+dataLowSatisfaction<-data[data$Satisfaction<4,]
+
+install.packages("dplyr")
+library(dplyr)
+
+dataGroupedByAirlineName<-group_by(dataLowSatisfaction,Airline.Name)
+
+dataSummarised<-summarise(dataGroupedByAirlineName ,LowSatisfiedEntries=n())
+
+dataGroupedByAirlineNameOriginalData<-group_by(data, Airline.Name)
+
+dataSummarised2<-summarise(dataGroupedByAirlineNameOriginalData, Total.Entries=n())
+
+dataCompare<-merge(dataSummarised,dataSummarised2)
+
+dataCompare$Relative<-(dataCompare$LowSatisfiedEntries/dataCompare$Total.Entries)*100
+
+# Pie Chart for airlines and their low satisfied customers
+
+slicesR<-dataCompare$Relative
+slicesR<-round(slicesR,2)
+slicesT<-dataCompare$Total.Entries
+names<-dataCompare$Airline.Name
+namesR<-paste(names,slicesR)
+namesR<-paste(namesR,"%", sep = "")
+pie(slicesR,labels = namesR, color=rainbow(length(namesR)) ,main="Pie Chart for % of low satisfied customers")
+namesT<-paste(names,slicesT)
+pie(slicesT,labels = namesT, color=rainbow(length(namesT)) ,main="Pie Chart for Total Airline entries")
+
+# Visualizing the airlines data to determine the airline with the highest customers with low satisfaction
+# word cloud
+
+# Install
+install.packages("tm")  # for text mining
+install.packages("SnowballC") # for text stemming
+install.packages("wordcloud") # word-cloud generator 
+install.packages("RColorBrewer") # color palettes
+# Load
+library("tm")
+library("SnowballC")
+library("wordcloud")
+library("RColorBrewer")
+
+text<-data$Airline.Name
+
+# text<-gsub("\\airlines", "", text)
+textR<-gsub("\\ ", "", text)
+
+head(textR)
+
+# Load the data as a corpus
+docs <- Corpus(VectorSource(textR))
+
+inspect(docs)
+
+head(docs)
+
+tdm<-TermDocumentMatrix(docs)
+
+m<-as.matrix(tdm)
+wordCounts<-rowSums(m)
+wordCounts<-sort(wordCounts,decreasing = TRUE)
+head(wordCounts,14)
+unique(data$Airline.Name)
+names(wordCounts)<-c("Cheapseats","Sigma","Flyfast","Northwest",
+                     "Paul_Smith","Oursin"," Southeast"," Enjoyflying",
+                     "OnlyJet","Flytosuna","FlyHere","West","Going_north",
+                     "Cool&Young")
+
+cloudFrame<-data.frame(word=names(wordCounts),freq=wordCounts)
+wordcloud(cloudFrame$word,cloudFrame$freq,res=300,colors=brewer.pal(8, "Dark2"))
+
+#We have chosen Cheapset as it has relatively more low satisfied customers
+dataCleaned<-data[(trimws(data$Airline.Name,which="right")=="Cheapseats Airlines Inc."),]
+rownames(dataCleaned)<-NULL
+dataCleaned<-subset(dataCleaned, select = -c(Airline.Name))
+dataCleaned<-subset(dataCleaned, select = -c(Airline.Code))
+apply(dataCleaned,2, function(x) any(is.na(x)))
+
+# Now we come to know that only three columns contain NA values
+# Those are 1. Departure.Delay.in.Minutes 2. Arrival.Delay.in.Minutes 3.Flight.time.in.minutes
+# Rest columns are free from NA
+
+dataCleaned[is.na(dataCleaned)]<-9999 # Dirty value
+apply(dataCleaned,2, function(x) any(is.na(x)))
+
+# No column contains NA
+str(dataCleaned)
+
+# converting the attributes which are date to the respective format
+dataCleaned$Flight.date<-as.Date(dataCleaned$Flight.date,"%m/%d/%y")
+
+str(dataCleaned)
