@@ -1,0 +1,171 @@
+# Using Association Rules Mining
+
+Survey_data<-dataCleaned
+str(Survey_data)
+
+map<-function(vec){
+  q <- quantile(vec, c(0.4, 0.6))
+  vBuckets <- replicate(length(vec), "Average")
+  vBuckets[vec <= q[1]] <- "Low"
+  vBuckets[vec > q[2]] <- "High"
+  return(vBuckets)
+}
+
+# Before applying check whether the col to be converted are numeric
+
+str(Survey_data)
+
+# We see only Satisfaction column needs to be converted
+
+Survey_data$Satisfaction<-as.numeric(Survey_data$Satisfaction)
+
+# Rechecking it
+
+str(Survey_data)
+
+# Now we can convert each column into their respective mapped columns
+
+Survey_data$Satisfaction<-map(Survey_data$Satisfaction)
+Survey_data$Age<-map(Survey_data$Age)
+Survey_data$Price_Sensitivity<-map(Survey_data$Price_Sensitivity)
+Survey_data$Year_of_First_Flight<-map(Survey_data$Year_of_First_Flight)
+Survey_data$No_of_Flights_p_a_<-map(Survey_data$No_of_Flights_p_a_)
+Survey_data$X__of_Flight_with_other_Airlines<-map(Survey_data$X__of_Flight_with_other_Airlines)
+Survey_data$No__of_other_Loyalty_Cards<-map(Survey_data$No__of_other_Loyalty_Cards)
+Survey_data$Shopping_Amount_at_Airport<-map(Survey_data$Shopping_Amount_at_Airport)
+Survey_data$Eating_and_Drinking_at_Airport<-map(Survey_data$Eating_and_Drinking_at_Airport)
+Survey_data$Day_of_Month<-map(Survey_data$Day_of_Month)
+
+# Flight date can't be mapped hence not taken into consideration
+Survey_data$Scheduled_Departure_Hour<-map(Survey_data$Scheduled_Departure_Hour)
+Survey_data$Departure_Delay_in_Minutes<-map(Survey_data$Departure_Delay_in_Minutes)
+Survey_data$Flight_time_in_minutes<-map(Survey_data$Flight_time_in_minutes)
+Survey_data$Flight_Distance<-map(Survey_data$Flight_Distance)
+Survey_data$Arrival_Delay_in_Minutes<-map(Survey_data$Arrival_Delay_in_Minutes)
+
+# So now all the columns are categorical
+
+#head(Survey_data)
+
+#str(Survey_data)
+
+# The columns aren't factors, so converting them to factors
+
+dummy<-Survey_data
+dummy[1:14]<-lapply(dummy[1:14],as.factor)
+dummy[20:26]<-lapply(dummy[20:26],as.factor)
+
+install.packages("arules")
+library(arules)
+
+install.packages("arulesViz")
+library(arulesViz)
+
+dummy[15:21]<-dummy[20:26]
+dummy<-dummy[-c(22:26)]
+str(dummy)
+dummyX<-as(dummy, "transactions")
+inspect(dummyX[1:10,])
+surveyDataX<-dummyX
+
+# For customers having low satisfaction
+
+rulesLow<-apriori(surveyDataX ,
+                  parameter = list(support=0.15,confidence=0.5,minlen=4,maxtime=0,maxlen=5),
+                  appearance = list(rhs=c("Satisfaction=Low")))
+# We got 130 rules
+
+inspect(rulesLow) # seeing the results affecting the satisfaction as low
+plot(rulesLow) # Ploting the results
+plot(rulesLow,method="paracoord")
+
+# Now, we will choose good rules based on the lift value, we can see there are few points above 1.8, so we will use that as delimiter
+
+goodrulesLow <- rulesLow[quality(rulesLow)$lift > 1.9]
+inspect(goodrulesLow) # These are 6 good rules
+plot(goodrulesLow,method="graph",main="KPI values resulting in Low Satisfaction ")
+
+# [1] {Airline_Status=Blue, Type_of_Travel=Personal Travel, No__of_other_Loyalty_Cards=Low}
+
+# [2] {Airline_Status=Blue, Gender=Female, Type_of_Travel=Personal Travel} 
+
+# [3] {Airline_Status=Blue, Type_of_Travel=Personal Travel, Class=Eco}                      
+
+# [4] {Airline_Status=Blue, Type_of_Travel=Personal Travel, Destination_City=No}            
+
+# [5] {Airline_Status=Blue, Gender=Female, Type_of_Travel=Personal Travel, Destination_City=No}            
+
+# [6] {Airline_Status=Blue, Type_of_Travel=Personal Travel, Class=Eco, Destination_City=No} 
+
+# Now for customers having high satisfaction
+
+rulesHigh<-apriori(surveyDataX ,
+                   parameter = list(support=0.002,confidence=0.5,minlen=4,maxtime=0,maxlen=5),
+                   appearance = list(rhs=c("Satisfaction=High")))
+# 154 rules
+
+inspect(rulesHigh) 
+plot(rulesHigh)
+plot(rulesHigh,method="paracoord")
+goodrulesHigh<-rulesHigh[quality(rulesHigh)$lift>6]
+plot(goodrulesHigh,method="graph",main="KPI values resulting in High Satisfaction")
+rules_by_liftGood<-sort(goodrulesHigh, by="lift")
+inspect(goodrulesHigh)
+inspect(rules_by_liftGood)
+
+# [1] {Airline_Status=Platinum, Price_Sensitivity=Low, Year_of_First_Flight=High, No__of_other_Loyalty_Cards=High}
+
+# [2] {Airline_Status=Platinum, Year_of_First_Flight=High, Type_of_Travel=Business travel, Scheduled_Departure_Hour=Low}
+
+# [3] {Airline_Status=Platinum, Gender=Male, Year_of_First_Flight=High, Day_of_Month=Low}       
+
+# [4] {Airline_Status=Platinum, Year_of_First_Flight=High, Type_of_Travel=Business travel, Day_of_Month=Low} 
+
+# goodrulesHighOrder<-rulesHigh[quality(rulesHigh)$lift]
+
+rules_by_lift <- sort(rulesHigh, by = "lift")
+inspect(rules_by_lift)
+
+# Rules for subset of data
+
+# Airline Status
+# Age
+# Gender
+# Type of Travel
+# Price Sensitivity
+# Nos of Flights pa
+# Class
+# Year of first flight
+
+Survey_dataSub<-dummy
+str(Survey_dataSub)
+head(Survey_dataSub,2)
+Survey_dataSub<-Survey_dataSub[,-c(8,10:12,14:21)]
+res<-cor(Survey_dataSub)
+str(dataCleaned)
+dataCorr<-dataCleaned[,-c(2,4,9,13,15:19,23,26)]
+dataCorr<-lapply(dataCorr,as.numeric)
+str(dataCorr)
+dataCorrMat<-asNumericMatrix(dataCorr)
+str(dataCorrMat)
+res<-cor(dataCorrMat )
+round(res,2)
+corrplot(res)
+head(Survey_dataSub)
+surveyDataSubX<-as(Survey_dataSub,"transactions")
+rulesLow<-apriori(surveyDataX ,parameter = list(support=0.07,confidence=0.5,minlen=4,maxtime=0,maxlen=5),appearance = list(rhs=c("Satisfaction=Low")))
+
+# Got 132 rules
+
+inspect(rulesLow)
+plot(rulesLow)
+goodrulesLow <- rulesLow[quality(rulesLow)$lift > 1.983]
+inspect(goodrulesLow)
+rulesHigh<-apriori(surveyDataX ,parameter = list(support=0.0025,confidence=0.5,minlen=4,maxtime=0,maxlen=5),appearance = list(rhs=c("Satisfaction=High")))
+
+# Got 71 rules
+
+inspect(rulesHigh)
+plot(rulesHigh)
+goodrulesHigh <- rulesHigh[quality(rulesHigh)$lift > 5.8]
+inspect(goodrulesHigh)
