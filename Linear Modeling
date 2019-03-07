@@ -1,0 +1,51 @@
+# Linear Modelling on Cheapseats dataset
+
+m1 <- lm(formula = Satisfaction ~ ., data = dataCleaned)
+summary(m1)
+model<-model.matrix(m1)
+
+# Significant columns
+
+# Airline_Status
+# Age
+# Price_Sensitivity
+# No_of_Flights_p_a_
+# Class
+
+m2 <- lm(formula = Satisfaction ~ Type_of_Travel, data = dataCleaned)
+summary(m2)
+
+# Mileage and Personal
+
+m3<-lm(formula=Satisfaction~Age, data=dataCleaned)
+summary(m3)
+plot(dataCleaned$Satisfaction,dataCleaned$Age)
+abline(m3)
+
+# Nothing significant
+
+m4<-lm(formula=Satisfaction~Price_Sensitivity,dataCleaned)
+summary(m4)
+plot(dataCleaned$Satisfaction,dataCleaned$Price_Sensitivity)
+abline(m4)
+
+# a line is drawn but didn't get much value
+
+m5<-lm(formula = Satisfaction~No_of_Flights_p_a_,dataCleaned)
+summary(m5)
+plot(dataCleaned$Satisfaction,dataCleaned$No_of_Flights_p_a_)
+abline(m5)
+
+# Nothing significant
+
+m6<-lm(formula = Satisfaction~Class,dataCleaned)
+summary(m6)
+
+# Checking the relation for Females
+dataCleanedFemale<-dataCleaned[]
+dataCleanedFemale<-dataCleaned[(trimws(dataCleaned$Gender,which="right")=="Female"),]
+rownames(dataCleanedFemale)<-NULL
+dataCleanedFemale<-subset(dataCleanedFemale, select = -c(Gender))
+modelFemale<-lm(formula=Satisfaction~.,data=dataCleanedFemale)
+summary(modelFemale)
+str(dataCleaned)
